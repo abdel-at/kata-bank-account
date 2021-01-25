@@ -1,4 +1,3 @@
-
 package bankAccount;
 
 import java.util.ArrayList;
@@ -34,18 +33,31 @@ public class Account {
 		
 	}
 	
+	/**
+	 * depose the amount to the account
+	 * @param amount
+	 */
+	public void deposeAmount(double amount) {
+		checkAmount(amount);
+		this.balance += amount;
+	}
 	
 	/**
-	 * method to withdraw or deposit in/from an account 
-	 * @param amount the amount to depose/withdraw
-	 * @param withdraw true for withdraw, false for deposit 
+	 * withdraw the amount from the account
+	 * @param amount
 	 */
+	public void withdrawAmount(double amount) {
+		checkAmount(amount);
+		this.balance -= amount;
+	}
 	
-	public void withdrawOrDeposit(double amount, boolean withdraw) {
-		if(withdraw) {
-			this.balance -= amount;
-		}else {
-			this.balance += amount;
+	/**
+	 * check if the amount is valid
+	 * @param amount
+	 */
+	public void checkAmount(double amount) {
+		if(amount < 0) {
+			throw new IllegalArgumentException("invalid amount");
 		}
 	}
 
@@ -55,15 +67,25 @@ public class Account {
 	 * @param amount the transfered amount
 	 */
 	public void transferTo(Account payee, double amount) {
-		Transaction transaction = new Transaction(this, payee, amount);
 		
-		this.withdrawOrDeposit(amount, true);
+		this.withdrawAmount(amount);
+		payee.deposeAmount(amount);
+		
+		this.recordTransfers(payee, amount);
+		
+	}
+	
+	/**
+	 * Record the transaction after transfers
+	 * @param payee
+	 * @param amount
+	 */
+	public void recordTransfers(Account payee, double amount) {
+		checkAmount(amount);
+		Transaction transaction = new Transaction(this, payee, amount);
 		this.getTransactionHistory().add(transaction);
-
-		payee.withdrawOrDeposit(amount, false);
 		payee.getTransactionHistory().add(transaction);
 
-		
 	}
 
 	public long getCountWherePayer() {
@@ -74,4 +96,3 @@ public class Account {
 		return this.transactionHistory.stream().filter(t -> t.getTo().equals(this)).count();
 	}
 }
-
