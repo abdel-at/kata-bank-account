@@ -1,11 +1,12 @@
 package bankAccount;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Before;
 import org.junit.Test;
 
-public class TestBankAccount {
+public class TestAccount {
 	
 	private Account testAccount,payer, payee, testedAccount, tr1,tr2;
 	
@@ -22,28 +23,58 @@ public class TestBankAccount {
 	
 	@Test
 	public void testWithdrawAndDeposit() {
-		testAccount.withdrawOrDeposit(500, true);
+		testAccount.withdrawAmount(500);
 		assertTrue(testAccount.getBalance() == 500);
-		testAccount.withdrawOrDeposit(500, false);
+		testAccount.deposeAmount(500);
 		assertTrue(testAccount.getBalance() == 1000);
-		
+	}
+	
+	@Test(expected = IllegalArgumentException.class)
+	public void testWithdrawAndDeposit_Failure() {
+		testAccount.withdrawAmount(-10d);
+		testAccount.deposeAmount(-10d);
 	}
 	
 	@Test
-	public void testTransferAndTransactionHistory() {
+	public void testTransfer() {
 		double payerBalance = payer.getBalance();
 		double payeeBalance = payee.getBalance();
 		payer.transferTo(payee, 500);
 		assertTrue(payer.getBalance() + 500 == payerBalance);
 		assertTrue(payee.getBalance() - 500 == payeeBalance);
 		
-		payer.getTransactionHistory().get(0).getTo().equals(payee);
-		payee.getTransactionHistory().get(0).getFrom().equals(payer);
+	}
+	
+	@Test
+	public void testRecordingTransfers() {
+		
+		payer.recordTransfers(payee, 500d);
+		assertTrue(payer.getTransactionHistory().get(0).getTo().equals(payee));
+		assertTrue(payee.getTransactionHistory().get(0).getFrom().equals(payer));
+	}
+	
+	@Test(expected = IllegalArgumentException.class)
+	public void recordingTransfer_Failure() {
+		payer.recordTransfers(payee, -500d);
+	}
+	
+	@Test
+	public void functionnalTransferTest() {
+		double amount = 100;
+		payer.transferTo(payee, amount);
+		
+		assertTrue(payer.getBalance() == 1400);
+		assertTrue(payee.getBalance() == 600);
+		
+		assertTrue(payer.getTransactionHistory().get(0).getTo().equals(payee));
+		assertTrue(payer.getTransactionHistory().get(0).getAmount() == 100);
+
 	}
 	
 	@Test
 	public void testQueryTransactionHistory() {
 		testedAccount.transferTo(tr1, 100);
+		
 		tr1.transferTo(testedAccount, 100);
 		tr2.transferTo(testedAccount, 100);
 		
