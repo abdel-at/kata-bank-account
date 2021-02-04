@@ -6,83 +6,98 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 
-public class TestAccount {
+import bankAccount.service.BankAccountService;
+import bankAccount.dto.Account;
+
+public class TestBankAccount {
 	
-	private Account testAccount,payer, payee, testedAccount, tr1,tr2;
+	private BankAccountService bankAccountService;
+	
+	private Account testAccount;
+	private Account payer; 
+	private Account payee; 
+	private Account testedAccount; 
+	private Account accountForTransaction;
+	private Account secondAccountForTransaction;
 	
 	@Before
 	public void init() {
-		testAccount = new Account(1000);
-		payer = new Account(1500);
-		payee = new Account(500);
-		testedAccount = new Account(100);
-		tr1 = new Account(100);
-		tr2 = new Account(100);
+		testAccount = new Account(1000, 1);
+		payer = new Account(1500, 2);
+		payee = new Account(500, 3);
+		testedAccount = new Account(100, 4);
+		accountForTransaction = new Account(100, 5);
+		secondAccountForTransaction = new Account(100, 6);
+		
+		bankAccountService = new BankAccountService();
 	}
 	
 	
 	@Test
-	public void testWithdrawAndDeposit() {
-		testAccount.withdrawAmount(500);
-		assertTrue(testAccount.getBalance() == 500);
-		testAccount.deposeAmount(500);
-		assertTrue(testAccount.getBalance() == 1000);
+	public void testWithdraw() {
+		this.bankAccountService.withdrawAmount(testAccount, 500);
+		assertEquals(testAccount.getBalance(), 500, 10);
+	}
+	
+	@Test
+	public void testDeposit() {
+		this.bankAccountService.deposeAmount(testAccount, 300);
+		assertEquals(testAccount.getBalance(), 1300, 10);
 	}
 	
 	@Test(expected = IllegalArgumentException.class)
-	public void testWithdrawAndDeposit_Failure() {
-		testAccount.withdrawAmount(-10d);
-		testAccount.deposeAmount(-10d);
+	public void checkAmount_fail_when_negativeEntry() {
+		bankAccountService.checkAmount(-100);
 	}
 	
 	@Test
 	public void testTransfer() {
 		double payerBalance = payer.getBalance();
 		double payeeBalance = payee.getBalance();
-		payer.transferTo(payee, 500);
-		assertTrue(payer.getBalance() + 500 == payerBalance);
-		assertTrue(payee.getBalance() - 500 == payeeBalance);
+		bankAccountService.transferTo(payer, payee, 500);
+		assertEquals(payer.getBalance() + 500 ,  payerBalance, 10);
+		assertEquals(payee.getBalance() - 500  , payeeBalance, 10);
 		
 	}
 	
 	@Test
 	public void testRecordingTransfers() {
 		
-		payer.recordTransfers(payee, 500d);
-		assertTrue(payer.getTransactionHistory().get(0).getTo().equals(payee));
-		assertTrue(payee.getTransactionHistory().get(0).getFrom().equals(payer));
+		bankAccountService.recordTransfers(payer, payee, 500d);
+		assertEquals(payer.getTransactionHistory().get(0).getTo(), payee);
+		assertEquals(payee.getTransactionHistory().get(0).getFrom(), payer);
 	}
 	
 	@Test(expected = IllegalArgumentException.class)
 	public void recordingTransfer_Failure() {
-		payer.recordTransfers(payee, -500d);
+		bankAccountService.recordTransfers(payer, payee, -500d);
 	}
 	
 	@Test
 	public void functionnalTransferTest() {
 		double amount = 100;
-		payer.transferTo(payee, amount);
+		bankAccountService.transferTo(payer, payee, amount);
 		
-		assertTrue(payer.getBalance() == 1400);
-		assertTrue(payee.getBalance() == 600);
+		assertEquals(payer.getBalance(), 1400, 10);
+		assertEquals(payee.getBalance(), 600, 10);
 		
-		assertTrue(payer.getTransactionHistory().get(0).getTo().equals(payee));
-		assertTrue(payer.getTransactionHistory().get(0).getAmount() == 100);
-
+		assertEquals(payer.getTransactionHistory().get(0).getTo(), payee);
+		assertEquals(payer.getTransactionHistory().get(0).getAmount() , 100, 10);
 	}
 	
 	@Test
 	public void testQueryTransactionHistory() {
-		testedAccount.transferTo(tr1, 100);
+		bankAccountService.transferTo(testedAccount, accountForTransaction, 100);
 		
-		tr1.transferTo(testedAccount, 100);
-		tr2.transferTo(testedAccount, 100);
+		bankAccountService.transferTo(accountForTransaction, testedAccount, 100);
+		bankAccountService.transferTo(secondAccountForTransaction, testedAccount, 100);
 		
-		long fromTestedAccount = testedAccount.getCountWherePayer();
-		long toTestedAccount = testedAccount.getCountWherePayee();
 		
-		assertTrue(fromTestedAccount == 1);
-		assertTrue(toTestedAccount == 2);
+		long fromTestedAccount = bankAccountService.getCountWherePayer(testedAccount);
+		long toTestedAccount = bankAccountService.getCountWherePayee(testedAccount);
+		
+		assertEquals(fromTestedAccount , 1, 0);
+		assertEquals(toTestedAccount , 2,0 );
 	}
 
 	
